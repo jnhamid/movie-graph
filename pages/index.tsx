@@ -1,17 +1,35 @@
 import type { NextPage, GetServerSideProps } from "next";
-import dynamic from "next/dynamic";
 import Head from "next/head";
-import { useEffect, useLayoutEffect, useState } from "react";
+import { RefObject, useEffect, useRef, useState } from "react";
 import AsyncSelect from "react-select/async";
 import makeAnimated from "react-select/animated";
+import dynamic from "next/dynamic";
+const ForceGraph = dynamic(() => import("react-force-graph-3d"), {
+  ssr: false,
+});
 
-const Home: NextPage = ({ data }: any) => {
+const Home: NextPage = () => {
+  const graphRef: RefObject<HTMLDivElement> = useRef<HTMLDivElement | null>(
+    null
+  );
+  const [graphWidth, setGraphWidth] = useState<number | undefined>(0);
+  const [data, setData] = useState<any>({});
   useEffect(() => {
     document.body.className = "h-full";
     document.documentElement.className = "h-full bg-white";
+    setGraphWidth(graphRef?.current?.offsetWidth);
+    if (data.nodes) return;
+    fetch("http://localhost:3001/api/names/graph2")
+      .then((res) => res.json())
+      .then((data) => {
+        setData(data);
+      });
   }, []);
 
-  console.log(data);
+  console.log(graphRef.current?.offsetWidth);
+
+  if (!(data && data.nodes && data.links)) return <> </>;
+
   const animatedComponents = makeAnimated();
 
   const getActors = async (query: string) => {
@@ -23,8 +41,11 @@ const Home: NextPage = ({ data }: any) => {
       <Head>
         <title>Actor Search</title>
       </Head>
-      <div className="min-h-screen flex">
-        <div className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
+      <div className="min-h-screen flex max-w-full overflow-hidden">
+        <div
+          className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24 bg-gradient-to-br
+        from-[#00ded3] to-[#891de0]"
+        >
           <div className="mx-auto w-full max-w-sm lg:w-96">
             <div>
               <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
@@ -85,10 +106,18 @@ const Home: NextPage = ({ data }: any) => {
             </div>
           </div>
         </div>
-        {/* <div className="hidden lg:block relative w-0 flex-1"> */}
-        {/* <div className="absolute inset-0 h-full w-full object-cover"> */}
-        {/* </div> */}
-        {/* </div> */}
+        <div ref={graphRef} className="hidden lg:block relative w-full">
+          <div className="absolute inset-0 h-full w-full">
+            {graphWidth && (
+              <ForceGraph
+                width={graphWidth}
+                graphData={data}
+                backgroundColor={"black"}
+                nodeAutoColorBy={"name"}
+              />
+            )}
+          </div>
+        </div>
       </div>
     </>
   );

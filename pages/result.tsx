@@ -9,6 +9,12 @@ const Result: NextPage = ({ data }: any) => {
       <Head>
         <title>Results</title>
       </Head>
+      <div className="flex">
+        {data.map((actor: any) => {
+          if (!actor.movie_id) return actor.name;
+          return <div key={actor.name}> {actor.name} -&gt;&nbsp; </div>;
+        })}
+      </div>
     </>
   );
 };

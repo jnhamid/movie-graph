@@ -1,9 +1,10 @@
 import type { NextPage, GetServerSideProps } from "next";
 import Head from "next/head";
-import { RefObject, useEffect, useRef, useState } from "react";
+import { RefObject, SyntheticEvent, useEffect, useRef, useState } from "react";
 import AsyncSelect from "react-select/async";
 import makeAnimated from "react-select/animated";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 const ForceGraph = dynamic(() => import("react-force-graph-3d"), {
   ssr: false,
 });
@@ -12,8 +13,13 @@ const Home: NextPage = () => {
   const graphRef: RefObject<HTMLDivElement> = useRef<HTMLDivElement | null>(
     null
   );
+
+  const [firstActor, setFirstActor] = useState("");
+  const [secondActor, setSecondActor] = useState("");
+
   const [graphWidth, setGraphWidth] = useState<number | undefined>(0);
   const [data, setData] = useState<any>({});
+
   useEffect(() => {
     document.body.className = "h-full";
     document.documentElement.className = "h-full bg-white";
@@ -23,10 +29,9 @@ const Home: NextPage = () => {
       .then((res) => res.json())
       .then((data) => {
         setData(data);
+        console.log(data);
       });
-  }, []);
-
-  console.log(graphRef.current?.offsetWidth);
+  }, [data]);
 
   if (!(data && data.nodes && data.links)) return <> </>;
 
@@ -71,6 +76,9 @@ const Home: NextPage = () => {
                         defaultOptions
                         components={animatedComponents}
                         loadOptions={getActors}
+                        onChange={(newValue: any) =>
+                          setFirstActor(newValue.value)
+                        }
                       />
                     </div>
                   </div>
@@ -80,7 +88,7 @@ const Home: NextPage = () => {
                       htmlFor="password"
                       className="block text-sm font-medium text-gray-700"
                     >
-                      Password
+                      Actor 2
                     </label>
                     <div className="mt-1">
                       <AsyncSelect
@@ -90,16 +98,29 @@ const Home: NextPage = () => {
                         defaultOptions
                         components={animatedComponents}
                         loadOptions={getActors}
+                        onChange={(newValue: any) => {
+                          setSecondActor(newValue.value);
+                        }}
                       />
                     </div>
                   </div>
                   <div>
-                    <button
-                      type="submit"
-                      className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    <Link
+                      href={{
+                        pathname: "/result",
+                        query: {
+                          firstActor: firstActor,
+                          secondActor: secondActor,
+                        },
+                      }}
                     >
-                      Find Path
-                    </button>
+                      <button
+                        type="submit"
+                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      >
+                        Find Path
+                      </button>
+                    </Link>
                   </div>
                 </form>
               </div>
@@ -121,17 +142,6 @@ const Home: NextPage = () => {
       </div>
     </>
   );
-};
-
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  const res = await fetch("http://localhost:3001/api/names/graph");
-  const data = await res.json();
-
-  // console.log(data);
-
-  return {
-    props: { data }, // will be passed to the page component as props
-  };
 };
 
 export default Home;
